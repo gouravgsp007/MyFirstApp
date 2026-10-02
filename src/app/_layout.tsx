@@ -11,11 +11,37 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
+    console.log('AUTH: RootLayout started');
 
-      setSession(data.session);
-      setLoading(false);
+    const loadSession = async () => {
+      console.log('AUTH: Getting session...');
+
+      try {
+        const { data, error } =
+          await supabase.auth.getSession();
+
+        console.log(
+          'AUTH: getSession finished',
+          data.session ? 'SESSION FOUND' : 'NO SESSION'
+        );
+
+        if (error) {
+          console.log(
+            'AUTH: getSession error:',
+            error.message
+          );
+        }
+
+        setSession(data.session);
+      } catch (error) {
+        console.log(
+          'AUTH: getSession crashed:',
+          error
+        );
+      } finally {
+        console.log('AUTH: Setting loading false');
+        setLoading(false);
+      }
     };
 
     loadSession();
@@ -24,6 +50,14 @@ export default function RootLayout() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
+        console.log(
+          'AUTH: Auth state changed:',
+          _event,
+          newSession
+            ? 'SESSION FOUND'
+            : 'NO SESSION'
+        );
+
         setSession(newSession);
       }
     );
@@ -34,6 +68,16 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    console.log(
+      'AUTH: Navigation check',
+      'loading:',
+      loading,
+      'session:',
+      session ? 'YES' : 'NO',
+      'segments:',
+      segments
+    );
+
     if (loading) {
       return;
     }
@@ -45,18 +89,29 @@ export default function RootLayout() {
       firstSegment === 'signup';
 
     if (!session && !inAuthGroup) {
+      console.log(
+        'AUTH: No session → Login'
+      );
+
       router.replace('/login');
       return;
     }
 
     if (session && inAuthGroup) {
+      console.log(
+        'AUTH: Session found → Dashboard'
+      );
+
       router.replace('/(tabs)');
     }
   }, [session, loading, segments]);
 
   if (loading) {
+    console.log('AUTH: Rendering loading screen');
     return null;
   }
+
+  console.log('AUTH: Rendering Stack');
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
