@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -61,10 +62,12 @@ export default function HomeScreen() {
         );
       } else {
         setDailyIncreases(0);
+
         await AsyncStorage.setItem(
           DAILY_INCREASES_KEY,
           '0'
         );
+
         await AsyncStorage.setItem(
           LAST_DATE_KEY,
           today
@@ -147,7 +150,22 @@ export default function HomeScreen() {
         '0'
       );
     } catch (error) {
-      console.log('Error resetting counter:', error);
+      console.log(
+        'Error resetting counter:',
+        error
+      );
+    }
+  };
+
+  const handleLogout = async () => {
+    const { error } =
+      await supabase.auth.signOut();
+
+    if (error) {
+      console.log(
+        'Logout error:',
+        error
+      );
     }
   };
 
@@ -164,6 +182,7 @@ export default function HomeScreen() {
         </Text>
 
         <View style={styles.card}>
+
           <Text style={styles.cardTitle}>
             Counter
           </Text>
@@ -175,6 +194,7 @@ export default function HomeScreen() {
           <Text style={styles.description}>
             Current count
           </Text>
+
         </View>
 
         <View style={styles.buttonRow}>
@@ -183,7 +203,9 @@ export default function HomeScreen() {
             style={styles.secondaryButton}
             onPress={decreaseCount}
           >
-            <Text style={styles.secondaryButtonText}>
+            <Text
+              style={styles.secondaryButtonText}
+            >
               −
             </Text>
           </Pressable>
@@ -192,7 +214,9 @@ export default function HomeScreen() {
             style={styles.primaryButton}
             onPress={increaseCount}
           >
-            <Text style={styles.primaryButtonText}>
+            <Text
+              style={styles.primaryButtonText}
+            >
               +1
             </Text>
           </Pressable>
@@ -203,7 +227,9 @@ export default function HomeScreen() {
           style={styles.resetButton}
           onPress={resetCount}
         >
-          <Text style={styles.resetButtonText}>
+          <Text
+            style={styles.resetButtonText}
+          >
             Reset Counter
           </Text>
         </Pressable>
@@ -211,6 +237,7 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
 
           <View style={styles.smallStatsCard}>
+
             <Text style={styles.statsLabel}>
               Today
             </Text>
@@ -218,9 +245,11 @@ export default function HomeScreen() {
             <Text style={styles.statsValue}>
               {dailyIncreases}
             </Text>
+
           </View>
 
           <View style={styles.smallStatsCard}>
+
             <Text style={styles.statsLabel}>
               Total
             </Text>
@@ -228,9 +257,21 @@ export default function HomeScreen() {
             <Text style={styles.statsValue}>
               {totalIncreases}
             </Text>
+
           </View>
 
         </View>
+
+        <Pressable
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Text
+            style={styles.logoutButtonText}
+          >
+            Logout
+          </Text>
+        </Pressable>
 
       </View>
     </SafeAreaView>
@@ -377,5 +418,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#111827',
     marginTop: 5,
+  },
+
+  logoutButton: {
+    marginTop: 20,
+    paddingHorizontal: 35,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#fee2e2',
+  },
+
+  logoutButtonText: {
+    color: '#dc2626',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
