@@ -10,21 +10,40 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COUNTER_KEY = '@my_first_app_counter';
 const INCREASES_KEY = '@my_first_app_total_increases';
+const DAILY_INCREASES_KEY = '@my_first_app_daily_increases';
+const LAST_DATE_KEY = '@my_first_app_last_date';
 
 export default function HomeScreen() {
   const [count, setCount] = useState(0);
   const [totalIncreases, setTotalIncreases] = useState(0);
+  const [dailyIncreases, setDailyIncreases] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
+  const getTodayDate = () => {
+    const today = new Date();
+
+    return today.toISOString().split('T')[0];
+  };
+
   const loadData = async () => {
     try {
-      const savedCount = await AsyncStorage.getItem(COUNTER_KEY);
+      const savedCount =
+        await AsyncStorage.getItem(COUNTER_KEY);
+
       const savedIncreases =
         await AsyncStorage.getItem(INCREASES_KEY);
+
+      const savedDailyIncreases =
+        await AsyncStorage.getItem(DAILY_INCREASES_KEY);
+
+      const savedDate =
+        await AsyncStorage.getItem(LAST_DATE_KEY);
+
+      const today = getTodayDate();
 
       if (savedCount !== null) {
         setCount(Number(savedCount));
@@ -32,6 +51,24 @@ export default function HomeScreen() {
 
       if (savedIncreases !== null) {
         setTotalIncreases(Number(savedIncreases));
+      }
+
+      if (savedDate === today) {
+        setDailyIncreases(
+          savedDailyIncreases !== null
+            ? Number(savedDailyIncreases)
+            : 0
+        );
+      } else {
+        setDailyIncreases(0);
+        await AsyncStorage.setItem(
+          DAILY_INCREASES_KEY,
+          '0'
+        );
+        await AsyncStorage.setItem(
+          LAST_DATE_KEY,
+          today
+        );
       }
     } catch (error) {
       console.log('Error loading data:', error);
@@ -46,7 +83,12 @@ export default function HomeScreen() {
     }
 
     saveData();
-  }, [count, totalIncreases, isLoaded]);
+  }, [
+    count,
+    totalIncreases,
+    dailyIncreases,
+    isLoaded,
+  ]);
 
   const saveData = async () => {
     try {
@@ -59,22 +101,40 @@ export default function HomeScreen() {
         INCREASES_KEY,
         totalIncreases.toString()
       );
+
+      await AsyncStorage.setItem(
+        DAILY_INCREASES_KEY,
+        dailyIncreases.toString()
+      );
+
+      await AsyncStorage.setItem(
+        LAST_DATE_KEY,
+        getTodayDate()
+      );
     } catch (error) {
       console.log('Error saving data:', error);
     }
   };
 
   const increaseCount = () => {
-    setCount((currentCount) => currentCount + 1);
+    setCount(
+      (currentCount) => currentCount + 1
+    );
 
     setTotalIncreases(
       (currentTotal) => currentTotal + 1
+    );
+
+    setDailyIncreases(
+      (currentDaily) => currentDaily + 1
     );
   };
 
   const decreaseCount = () => {
     setCount((currentCount) =>
-      currentCount > 0 ? currentCount - 1 : 0
+      currentCount > 0
+        ? currentCount - 1
+        : 0
     );
   };
 
@@ -82,7 +142,10 @@ export default function HomeScreen() {
     setCount(0);
 
     try {
-      await AsyncStorage.setItem(COUNTER_KEY, '0');
+      await AsyncStorage.setItem(
+        COUNTER_KEY,
+        '0'
+      );
     } catch (error) {
       console.log('Error resetting counter:', error);
     }
@@ -97,7 +160,7 @@ export default function HomeScreen() {
         </Text>
 
         <Text style={styles.subtitle}>
-          Simple Counter Application
+          Daily Counter Application
         </Text>
 
         <View style={styles.card}>
@@ -145,14 +208,28 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
 
-        <View style={styles.statsCard}>
-          <Text style={styles.statsLabel}>
-            Total Increases
-          </Text>
+        <View style={styles.statsRow}>
 
-          <Text style={styles.statsValue}>
-            {totalIncreases}
-          </Text>
+          <View style={styles.smallStatsCard}>
+            <Text style={styles.statsLabel}>
+              Today
+            </Text>
+
+            <Text style={styles.statsValue}>
+              {dailyIncreases}
+            </Text>
+          </View>
+
+          <View style={styles.smallStatsCard}>
+            <Text style={styles.statsLabel}>
+              Total
+            </Text>
+
+            <Text style={styles.statsValue}>
+              {totalIncreases}
+            </Text>
+          </View>
+
         </View>
 
       </View>
@@ -274,13 +351,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  statsCard: {
+  statsRow: {
     width: '100%',
     maxWidth: 500,
+    flexDirection: 'row',
+    gap: 15,
+    marginTop: 25,
+  },
+
+  smallStatsCard: {
+    flex: 1,
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
-    marginTop: 25,
     alignItems: 'center',
   },
 
